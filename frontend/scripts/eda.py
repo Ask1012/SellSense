@@ -32,27 +32,61 @@ def customer_behavior(df, product_col='Product', value_col='Quantity', top_n=5):
 # eda.py
 
 
-def top_products(data, product_col='Product_ID', n=10):
-    """
-    Return top N products by count
-    """
-    top_df = data[product_col].value_counts().head(n).reset_index()
-    top_df.columns = [product_col, 'Count']
+def top_products(data, product_col='Product_ID', value_col='Purchase', n=10):
+
+    top_df = (
+        data.groupby(product_col)[value_col]
+        .sum()
+        .sort_values(ascending=False)
+        .head(n)
+        .reset_index()
+    )
+
     return top_df
 
-def purchases_by_gender(df, gender_col='Gender', value_col='Quantity'):
-    return df.groupby(gender_col)[value_col].sum().reset_index()
 
-def purchases_by_city(df, city_col='City', value_col='Quantity'):
-    return df.groupby(city_col)[value_col].sum().reset_index()
+# ✅ Top Categories
+def top_categories(df, category_col='Product_Category_1', value_col='Purchase', top_n=10):
 
-def purchases_by_age(df, age_col='Age', value_col='Quantity', bins=None):
-    if bins is None:
-        bins = [0, 18, 25, 35, 50, 100]
-    labels = [f"{bins[i]}-{bins[i+1]-1}" for i in range(len(bins)-1)]
-    df['AgeGroup'] = pd.cut(df[age_col], bins=bins, labels=labels, right=False)
-    return df.groupby('AgeGroup')[value_col].sum().reset_index()
+    category_perf = (
+        df.groupby(category_col)[value_col]
+        .sum()
+        .sort_values(ascending=False)
+        .head(top_n)
+        .reset_index()
+    )
 
+    return category_perf
+
+
+# ✅ Purchases by Gender
+def purchases_by_gender(df, gender_col='Gender', value_col='Purchase'):
+
+    return (
+        df.groupby(gender_col)[value_col]
+        .sum()
+        .reset_index()
+    )
+
+
+# ✅ Purchases by City
+def purchases_by_city(df, city_col='City_Category', value_col='Purchase'):
+
+    return (
+        df.groupby(city_col)[value_col]
+        .sum()
+        .reset_index()
+    )
+
+
+# ✅ Purchases by Age Group
+def purchases_by_age(df, age_col='Age', value_col='Purchase'):
+
+    return (
+        df.groupby(age_col)[value_col]
+        .sum()
+        .reset_index()
+    )
 # Example usage:
 # if __name__ == "__main__":
 #     import scripts.data_loader as dl
