@@ -6,16 +6,24 @@ from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 
-def prepare_data(df, date_col='Date', target_col='Revenue'):
+def prepare_data(df, target_col='Purchase'):
     """
-    Prepares features for time-series like prediction.
-    Uses 'Day', 'Month', 'Year' as simple features.
+    Prepare features for regression.
+    Uses numeric encoding for categorical columns.
     """
     df = df.copy()
-    df['Day'] = df[date_col].dt.day
-    df['Month'] = df[date_col].dt.month
-    df['Year'] = df[date_col].dt.year
-    X = df[['Day', 'Month', 'Year']]
+    
+    # Fill missing values (just in case)
+    df = df.fillna(0)
+    
+    # Select features (all except target)
+    X = df.drop(columns=[target_col])
+    
+    # Encode categorical features
+    cat_cols = X.select_dtypes(include='object').columns
+    for col in cat_cols:
+        X[col] = X[col].astype('category').cat.codes  # simple label encoding
+    
     y = df[target_col]
     return X, y
 
@@ -37,12 +45,17 @@ def train_random_forest(X, y, n_estimators=100):
     rmse = mean_squared_error(y_test, y_pred, squared=False)
     return model, rmse
 
-def predict_future_sales(model, future_dates):
+def predict_sales(model, input_data):
     """
-    future_dates: pandas DataFrame with 'Day', 'Month', 'Year'
-    Returns predicted sales
+    Predict sales for new input data.
+    input_data: pandas DataFrame with same feature columns as training data
     """
-    predictions = model.predict(future_dates)
+    # Encode categorical features
+    cat_cols = input_data.select_dtypes(include='object').columns
+    for col in cat_cols:
+        input_data[col] = input_data[col].astype('category').cat.codes
+    
+    predictions = model.predict(input_data)
     return predictions
 
 # Example usage:
@@ -50,5 +63,5 @@ def predict_future_sales(model, future_dates):
 #     import scripts.data_loader as dl
 #     df = dl.load_sales_data("../data/sales_data.csv")
 #     X, y = prepare_data(df)
-#     model, rmse = train_linear_regression(X, y)
-#     print(f"Linear Regression RMSE: {rmse}")
+#     model, rmse = train_random_forest(X, y)
+#     print(f"Random Forest RMSE: {rmse}")

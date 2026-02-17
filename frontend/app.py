@@ -2,18 +2,17 @@
 
 import streamlit as st
 import pandas as pd
-from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Import our modules
 from scripts.data_loader import load_sales_data
-from scripts.eda import sales_trend, top_categories, customer_behavior
-from scripts.model import prepare_data, train_linear_regression, train_random_forest, predict_future_sales
+from scripts.eda import top_products, top_categories, purchases_by_gender, purchases_by_city, purchases_by_age
+from scripts.model import prepare_data, train_linear_regression, train_random_forest, predict_sales
 
 st.set_page_config(page_title="SellSense - Sales Prediction", layout="wide")
 
-st.title("📊 SellSense – AI Powered Sales Prediction System")
+st.title("📊 SellSense – AI Powered Sales Analysis & Prediction")
 
 # --- Upload CSV ---
 st.sidebar.header("Upload Sales Data")
@@ -27,61 +26,46 @@ if uploaded_file:
         st.write("Preview of your data:")
         st.dataframe(df.head())
 
-        # --- Filters ---
-        st.sidebar.header("Filters")
-        min_date = df['Date'].min()
-        max_date = df['Date'].max()
-        date_range = st.sidebar.date_input("Select Date Range", [min_date, max_date])
-        
-        categories = df['Category'].unique().tolist()
-        selected_categories = st.sidebar.multiselect("Select Categories", categories, default=categories)
-
-        # Apply filters
-        filtered_df = df[(df['Date'] >= pd.to_datetime(date_range[0])) & 
-                         (df['Date'] <= pd.to_datetime(date_range[1])) &
-                         (df['Category'].isin(selected_categories))]
-
-        # --- Sales Trend ---
-        st.subheader("📈 Sales Trend Over Time")
-        trend_df = sales_trend(filtered_df)
-        fig, ax = plt.subplots()
-        sns.lineplot(data=trend_df, x='Date', y='Revenue', marker='o', ax=ax)
-        ax.set_ylabel("Revenue")
-        st.pyplot(fig)
+        # --- Top Products ---
+        st.subheader("🏆 Top Products by Purchase")
+        top_prod_df = top_products(df)
+        st.bar_chart(top_prod_df.set_index('Product_ID'))
 
         # --- Top Categories ---
-        st.subheader("🏆 Top 3 Performing Categories")
-        top_cat_df = top_categories(filtered_df)
-        st.bar_chart(top_cat_df.set_index('Category'))
+        st.subheader("📦 Top Product Categories")
+        top_cat_df = top_categories(df)
+        st.bar_chart(top_cat_df.set_index('Product_Category_1'))
 
-        # --- Customer Behavior ---
-        st.subheader("🛒 Top Products by Quantity Sold")
-        top_prod_df = customer_behavior(filtered_df)
-        st.table(top_prod_df)
+        # --- Purchases by Gender ---
+        st.subheader("👥 Purchases by Gender")
+        gender_df = purchases_by_gender(df)
+        st.bar_chart(gender_df.set_index('Gender'))
+
+        # --- Purchases by City ---
+        st.subheader("🏙️ Purchases by City Category")
+        city_df = purchases_by_city(df)
+        st.bar_chart(city_df.set_index('City_Category'))
+
+        # --- Purchases by Age ---
+        st.subheader("🎂 Purchases by Age Group")
+        age_df = purchases_by_age(df)
+        st.bar_chart(age_df.set_index('Age'))
 
         # --- Sales Prediction ---
-        st.subheader("🔮 Future Sales Prediction")
-        X, y = prepare_data(filtered_df)
+        st.subheader("🔮 Predict Purchase Amounts")
+        X, y = prepare_data(df)
         model_choice = st.selectbox("Select ML Model", ["Linear Regression", "Random Forest"])
         
-        if st.button("Predict Next 30 Days"):
-            future_dates = pd.date_range(filtered_df['Date'].max() + timedelta(1), 
-                                         periods=30).to_frame(index=False, name='Date')
-            future_dates['Day'] = future_dates['Date'].dt.day
-            future_dates['Month'] = future_dates['Date'].dt.month
-            future_dates['Year'] = future_dates['Date'].dt.year
-            X_future = future_dates[['Day', 'Month', 'Year']]
-            
+        if st.button("Train & Predict"):
             if model_choice == "Linear Regression":
                 model, rmse = train_linear_regression(X, y)
             else:
                 model, rmse = train_random_forest(X, y)
             
-            predictions = predict_future_sales(model, X_future)
-            future_dates['Predicted_Revenue'] = predictions
-            
             st.write(f"Model RMSE: {rmse:.2f}")
-            fig2, ax2 = plt.subplots()
-            sns.lineplot(data=future_dates, x='Date', y='Predicted_Revenue', marker='o', ax=ax2)
-            ax2.set_ylabel("Predicted Revenue")
-            st.pyplot(fig2)
+            
+            # Predict on the same dataset (or new inputs)
+            predictions = predict_sales(model, X)
+            df['Predicted_Purchase'] = predictions
+            st.subheader("Predicted Purchase Amounts (sample)")
+            st.dataframe(df[['User_ID', 'Product_ID', 'Purchase', 'Predicted_Purchase']].head(20))
