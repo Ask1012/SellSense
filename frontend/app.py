@@ -20,7 +20,8 @@ uploaded_file = st.sidebar.file_uploader("Upload CSV", type=["csv"])
 
 if uploaded_file:
     df = load_sales_data(uploaded_file)
-    
+    st.write("Columns in the dataset:", df.columns.tolist())
+
     if df is not None:
         st.success("Data loaded successfully!")
         st.write("Preview of your data:")

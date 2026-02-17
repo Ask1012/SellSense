@@ -31,19 +31,22 @@ def customer_behavior(df, product_col='Product', value_col='Quantity', top_n=5):
 
 # eda.py
 
-def top_products(data, n=10):
-    return data['product'].value_counts().head(n)
+
+def top_products(data, product_col='Product_ID', n=10):
+    """
+    Return top N products by count
+    """
+    top_df = data[product_col].value_counts().head(n).reset_index()
+    top_df.columns = [product_col, 'Count']
+    return top_df
 
 def purchases_by_gender(df, gender_col='Gender', value_col='Quantity'):
-    """Aggregate purchases by gender"""
     return df.groupby(gender_col)[value_col].sum().reset_index()
 
 def purchases_by_city(df, city_col='City', value_col='Quantity'):
-    """Aggregate purchases by city"""
     return df.groupby(city_col)[value_col].sum().reset_index()
 
 def purchases_by_age(df, age_col='Age', value_col='Quantity', bins=None):
-    """Aggregate purchases by age groups"""
     if bins is None:
         bins = [0, 18, 25, 35, 50, 100]
     labels = [f"{bins[i]}-{bins[i+1]-1}" for i in range(len(bins)-1)]
