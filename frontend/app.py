@@ -25,7 +25,7 @@ if uploaded_file:
     if df is not None:
         st.success("Data loaded successfully!")
         st.write("Preview of your data:")
-        st.dataframe(df.head())
+        st.dataframe(df.head(20))
 
         # --- Top Products ---
         st.subheader("🏆 Top Products by Purchase")

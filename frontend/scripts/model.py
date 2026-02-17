@@ -33,7 +33,9 @@ def train_linear_regression(X, y):
     model = LinearRegression()
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
-    rmse = mean_squared_error(y_test, y_pred, squared=False)
+    rmse = mean_squared_error(y_test, y_pred) ** 0.5
+
+    
     return model, rmse
 
 def train_random_forest(X, y, n_estimators=100):
